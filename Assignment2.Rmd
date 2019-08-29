@@ -49,9 +49,7 @@ d(y)   &= 0. \\
 \end{aligned}
 \]
 
-Thus $Y$ is from the exponential family of distributions, and so we can calculate the expectation and variance of $Y$ using the appropriate results.
-
-
+Thus $Y$ is from the exponential family of distributions, and so we can calculate the expectaction and variance of $Y$ using the appropriate results.
 
 It follows that:
 $$
@@ -74,12 +72,12 @@ $$
 
 We first derive an expression for the weights $w_{ii}$ in terms of $\mu_{i}$.
 
-We know that $w_{ii} = \frac{1}{\text{Var[Y]}}(\frac{\partial \mu_{i}}{\partial \eta_{i}})^{2}$.
+We know that $w_{ii} = \frac{1}{\text{Var}[Y_i]}(\frac{\partial \mu_{i}}{\partial \eta_{i}})^{2}$.
 
 For a Bernoulli random variable $Y_{i}$ with mean $\mu_{i}$, from (a) we know that $$\text{Var}[Y_{i}] = \mu_{i} (1- \mu_{i}).$$
 
 Now, we are given that the link function is $g(\mu_{i}) = \eta_i = \text{logit}(\mu_i) = \text{log}(\frac{\mu_i}{1-\mu_i}).$
-Rearranging, we get that $\mu_i = \frac{e^{\eta_i}}{1+\eta_{i}}$, from which we obtain $$\frac{\partial \mu_{i}}{\partial \eta_{i}} = \frac{e^{\eta_i}}{(1+e^{\eta_{i}})^2} = \mu_{i} (1-\mu_{i}),$$ in terms of $\mu_i$.
+Rearranging, we get that $\mu_i = \frac{e^{\eta_i}}{1+e^{\eta_{i}}}$, from which we obtain $$\frac{\partial \mu_{i}}{\partial \eta_{i}} = \frac{e^{\eta_i}}{(1+e^{\eta_{i}})^2} = \mu_{i} (1-\mu_{i}),$$ in terms of $\mu_i$.
 
 It thus follows that 
 $$
@@ -132,7 +130,7 @@ glm_fit = function(Y, X, beta_start, k = 10)
 
 By comparing the estimates produced by R's `glm()` function to those produced by my `glm_fit()` function in the table below, we can verify that the estimates produced by `glm_fit()` are correct. 
 
-*Note that we have relevelled the factor variables such that 'PClass3' and 'female' are treated as the reference categories for PClass and Sex respectively.*
+*Note that we have relevelled the factor variables such that 'PClass3' and 'male' are treated as the reference categories for PClass and Sex respectively.*
 
 ```{r echo=FALSE, warning=FALSE}
 # Run R's glm and obtain results
@@ -171,7 +169,7 @@ kable(results_mtx, format = 'latex', booktabs = T, align="c", escape = F, captio
 
  For the given model, we have that the odds are calculated as
 $$ \text{exp}(B_0 + B_1x_{i}^{SEX} + B_2x_{i}^{AGE} + B_3x_{i}^{PClass1} + B_4x_{i}^{PClass2} + B_5x_{i}^{SEX \cdot PClass1} + B_6x_{i}^{SEX \cdot PClass2}), $$
-with 'PClass3' and 'female' being treated as the reference categories for PClass and Sex respectively.
+with 'PClass3' and 'male' being treated as the reference categories for PClass and Sex respectively.
 
 ```{r include=FALSE}
 fitOR = glm(Survived ~ Sex + Age + Pclass + Sex*Pclass, family = binomial(link = "logit"), data = dat)
@@ -194,17 +192,17 @@ conf2 = exp(beta4 + c(-1,1)*1.96*se4)
 conf2
 ```
 
-We first calculate the ratio of the odds of survival for a *First Class* male passenger aged 25 to the odds of Third Class male passengers of the same age as follows: $$\text{OR}_{1st,3rd} = \text{exp}(\beta_3) = `r OR1`.$$
+We first calculate the ratio of the odds of survival for a *First Class* male passenger aged 25 to the odds of *Third Class* male passengers of the same age as follows: $$\text{OR}_{1st,3rd} = \text{exp}(\beta_3) = `r OR1`.$$
 This can be interpreted as First Class male passengers of the same age being 2.743 times as likely to survive than Third Class passengers.
 
 An approximate 95% confidence interval for this odds ratio, $\text{OR}_{1st,3rd}$, is calculated as 
-$$ \text{exp}(\beta_3 \pm 1.96 \cdot se(\beta_3)) = \text{exp}(`r beta3`\pm 1.96 \cdot`r se3`),$$ yielding a confidence interval of (`r conf1[1]`, `r conf1[2]`). Since this confidence interval does not contain 1, we can interpret this interval as suggesting that at the 95% confidence level, there is evidence in the data of a significant increase in the probability of a male passenger surviving for a given age if they are a First Class passenger compared to if they were a Third Class passenger.
+$$ \text{exp}(\beta_3 \pm 1.96 \cdot se(\beta_3)) = \text{exp}(`r beta3`\pm 1.96 \cdot`r se3`),$$ yielding a confidence interval of (`r conf1[1]`, `r conf1[2]`). Since this confidence interval does not contain 1, we can interpret this interval as suggesting that at the 95% confidence level, there is evidence in the data of a statistically significant higher probability of a male passenger surviving for a given age if they are a First Class passenger compared to if they were a Third Class passenger.
 
-Similarly, we can calculate the ratio of the odds of survival for a *Second Class* male passenger aged 25 to the odds of Third Class male passengers of the same age $$OR_{2nd,3rd} = \text{exp}(B_4) = `r OR2`,$$ and obtain an approximate 95% confidence interval using $$ \text{exp}(\beta_4 \pm 1.96 \cdot se(\beta_4)) = \text{exp}(`r beta4`\pm 1.96 \cdot`r se4`),$$ producing a confidence interval of (`r conf2[1]`, `r conf2[2]`).
+Similarly, we can calculate the ratio of the odds of survival for a *Second Class* male passenger aged 25 to the odds of *Third Class* male passengers of the same age $$OR_{2nd,3rd} = \text{exp}(B_4) = `r OR2`,$$ and obtain an approximate 95% confidence interval using $$ \text{exp}(\beta_4 \pm 1.96 \cdot se(\beta_4)) = \text{exp}(`r beta4`\pm 1.96 \cdot`r se4`),$$ producing a confidence interval of (`r conf2[1]`, `r conf2[2]`).
 
-We can interpret these results as suggesting Second Class male passengers of the same age are 1.0847 times as likely to survive than Third Class passengers. However, since the appropriate confidence interval contains 1, there is insufficient evidence at the 95% confidence level that the chance of a Second Class male for a given age surviving compared to a Third Class male passenger of the same age.
+We can interpret these results as suggesting Second Class male passengers of the same age are 1.0847 times as likely to survive than Third Class passengers. However, since the appropriate confidence interval contains 1, there is insufficient evidence at the 95% confidence level that a Second Class male for a given age has a higher likelihood of surviving compared to a Third Class male passenger of the same age.
 
-In summary, the data suggests that at the 95% confidence level, First Class male passengers are significantly more likely to survive than Third Class male passengers for a given age, however there is insufficient evidence at this confidence level that Second Class male passengers have a greater chance of surviving than Third Class male passengers with the same age.
+In summary, the data suggests that at the 95% confidence level, First Class male passengers are more likely to survive than Third Class male passengers for a given age, however there is insufficient evidence at this confidence level that Second Class male passengers have a greater chance of surviving than Third Class male passengers with the same age.
 
 ## (f) Model Building of Logistic Regression Model of the Data
 
@@ -351,7 +349,7 @@ and $g(\mu_i)$ is the complementary log-log link function.
 
 We can interpret the coefficients of the model to gather insights into the nature of the relationship between the predictors and survival of the passengers. The negative coefficient for age indicates that the older the passenger, the smaller their chance of survival. The coefficients for sex and passenger classes suggest that females have a higher chance of survival than males, and being in 1st or 2nd Class results in a higher predicted survival probability than being in 3rd Class.  
 
-One of our key questions of interest was if socio-economic status had any bearing on the likelihood of survival for male passengers. We can interpret the coefficients of the interaction terms for sex and passenger class to answer this question. From the coefficient of 1.8786 for the sex and 1st Class passengers interaction term, and 2.0953 for the sex and 2nd Class passengers interaction term, we can clearly see that socio-economic status had a large effect on the likelihood of survival for male passengers. Females in the 1st and 2nd Class passengers clearly had a much greater survival probability than males from these socio-economic classes, which hence provides us with an answer to our question of interest.
+One of our key questions of interest was if socio-economic status had any bearing on the likelihood of survival for male passengers. Given that it was deemed necessary to add an interaction term for sex and passenger class due to this addition resulting in a statistically significant reduction in model deviance, it appears that there *is* a relationship between socio-economic status and the probability of male passengers surviving. We can interpret the coefficients of the interaction terms for sex and passenger class to gain insight into the nature of this relationship, and in so doing, answer our question of interest. From the coefficient of 1.8786 for the sex and 1st Class passengers interaction term, and 2.0953 for the sex and 2nd Class passengers interaction term (compared to just 0.56459 for female passengers compared to male passengers in isolation), we can clearly see that socio-economic status had a large effect on the likelihood of survival for male passengers. 1st and 2nd Class female passengers clearly had a much greater survival probability than males from these socio-economic classes (over-and-above the effect accounted for just by sex in isolation), which hence provides us with an answer to our question of interest.
 
 ## (g) Predictions on Test Dataset
 
