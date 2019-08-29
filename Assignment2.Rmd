@@ -5,15 +5,13 @@ date: "8/11/2019"
 output:
   pdf_document:
     toc: yes
-    toc_depth: 2
+    toc_depth: 3
   html_document:
     df_print: paged
 header-includes: \usepackage{float} \makeatletter\renewcommand*{\fps@figure}{H}\makeatother
 df_print: kable
 fontsize: 11pt
 ---
-
-\pagebreak
 
 # Question 1
 
@@ -351,34 +349,84 @@ We can interpret the coefficients of the model to gather insights into the natur
 
 One of our key questions of interest was if socio-economic status had any bearing on the likelihood of survival for male passengers. Given that it was deemed necessary to add an interaction term for sex and passenger class due to this addition resulting in a statistically significant reduction in model deviance, it appears that there *is* a relationship between socio-economic status and the probability of male passengers surviving. We can interpret the coefficients of the interaction terms for sex and passenger class to gain insight into the nature of this relationship, and in so doing, answer our question of interest. From the coefficient of 1.8786 for the sex and 1st Class passengers interaction term, and 2.0953 for the sex and 2nd Class passengers interaction term (compared to just 0.56459 for female passengers compared to male passengers in isolation), we can clearly see that socio-economic status had a large effect on the likelihood of survival for male passengers. 1st and 2nd Class female passengers clearly had a much greater survival probability than males from these socio-economic classes (over-and-above the effect accounted for just by sex in isolation), which hence provides us with an answer to our question of interest.
 
-## (g) Predictions on Test Dataset
+
+## (g) Tree-based Methods
+
+### (i) Fitting a Default Classification Tree
 
 ```{r include=FALSE}
-final_model = glm(Survived ~ Sex + Pclass + Age + Sex*Pclass + Sex*Age, family = binomial(link = "logit"), data = dat)
-test_data = read.table('Assignment_2_Titanic_SetB.txt', h = TRUE)
+library(tree)
+```
 
-N = length(test_data[,1])
-PassengerId = 1:N
+A default classification tree for the data has been fitted and plotted below.
+
+```{r echo=FALSE, fig.cap = "Default Classification Tree for Survival of Passengers"}
+# Fit the default model
+tree_model = tree(Survived ~ ., data = dat)
+# tree_model
+
+# Plot the tree with text
+plot(tree_model)
+text(tree_model, pretty = 0)
+```
+
+### (ii) Interpretation of Fitted Tree
+
+Why it makes sense (1 mark)
+Relevance of lower predictors
+Overfitting (1 mark)
+
+## (h) Predictions on Test Dataset
+
+```{r include=FALSE}
+
+glm_model  = glm(Survived ~ Sex + Pclass + Age + Sex*Pclass + Sex*Age, family = binomial(link = "cloglog"), data = dat)
+tree_model = tree(Survived ~ ., data = dat)
+
+test_data = read.table('Assignment_2_Titanic_SetB.txt', h = TRUE)
+N         = length(test_data[,1]) 
+
 test_data$Sex = factor(test_data$Sex)
 test_data$Pclass = factor(test_data$Pclass)
-prediction_probs = predict(final_model, newdata = test_data, type="response")
-predictions = round(prediction_probs)  # change from probabilities to 0s and 1s
+test_data$Pclass = relevel(test_data$Pclass, "3")
+test_data$Sex = relevel(test_data$Sex, "male")
 
-# cbind(head(test_data$Survived, 20), head(predictions, 20))
-tf_vector = test_data$Survived == predictions
+# Make GLM predictions
+prediction_probs_glm = predict(glm_model, newdata = test_data, type="response")
+predictions_glm = round(prediction_probs_glm)  # change from probabilities to 0s and 1s
 
-# tf_vector = dat$Survived == round(fitted.values(final_model)) # fitted values on orig -> 0.797
+# Make Tree predictions
+prediction_probs_tree = predict(tree_model, newdata = test_data)
+predictions_tree = round(prediction_probs_tree)  # change from probabilities to 0s and 1s
 
-num_correct = length(tf_vector[tf_vector == TRUE])
-prediction_accuracy = num_correct/N
-prediction_accuracy
+# View first 20 predictions vs test set
+# cbind(head(test_data$Survived, 20), head(predictions_glm, 20), head(predictions_tree, 20))
 
-pred = data.frame(cbind(PassengerId, predictions))
+# GLM Prediction Accuracy
+tf_vector_glm = test_data$Survived == predictions_glm
+# tf_vector_glm = dat$Survived == round(fitted.values(glm_model)) # fitted values on orig -> 0.797
+num_correct_glm = length(tf_vector_glm[tf_vector_glm == TRUE])
+prediction_accuracy_glm = num_correct_glm/N
+
+# Tree Prediction Accuracy
+tf_vector_tree = test_data$Survived == predictions_tree
+# tf_vector = dat$Survived == round(fitted.values(tree_model)) # fitted values on orig -> 0.797
+num_correct_tree = length(tf_vector_tree[tf_vector_tree == TRUE])
+prediction_accuracy_tree = num_correct_tree/N
+
+c("GLM Accuracy"  = prediction_accuracy_glm,
+  "Tree Accuracy" = prediction_accuracy_tree)
+
+pred = data.frame(cbind(predictions_glm, predictions_tree))
 write.table(pred,'Titanic_Pred_WSZSHA001.csv', quote = F, row.names = F, sep = ',')
 ```
 
-The final model we fitted in part (f) was a logistic regression model with a complimentary log-log link function with the following predictors: $$Survived \sim Sex + Pclass + Age + Sex \cdot PClass + Sex \cdot Age.$$ 
-If we use this model to make predictions on the test data set, we see that the model correctly predicts whether or not a passenger survived for **`r num_correct`** out of the **`r N`** observations. This equates to a prediction accuracy of the model with respect to survival of **`r prediction_accuracy`**. 
+The final GLM model we fitted in part (f) was a logistic regression model with a complimentary log-log link function with the following predictors: $$Survived \sim Sex + Pclass + Age + Sex \cdot PClass + Sex \cdot Age.$$ 
+If we use this model to make predictions on the test data set, we see that the model correctly predicts whether or not a passenger survived for **`r num_correct_glm`** out of the **`r N`** observations. This equates to a prediction accuracy of the model with respect to survival of **`r prediction_accuracy_glm`**. 
+
+Now, in comparison, if we use the default tree model fitted in part (g) to make predictions on the test data set, we see that this model correctly predicts whether or not a passenger survived for **`r num_correct_tree`** out of the **`r N`** observations. This equates to a prediction accuracy of the model with respect to survival of **`r prediction_accuracy_tree`**. 
+
+Thus the default tree model performs slightly worse than the chosen GLM model when evaluated on the test dataset.
 
 # Appendix: R-Code
 
